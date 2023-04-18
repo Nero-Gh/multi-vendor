@@ -17,19 +17,16 @@ router.post("/create-user", upload.single("file"), async (req, res, next) => {
     const { name, email, password } = req.body;
     const userEmail = await User.findOne({ email });
 
+    //prevent image upload is email exit
     if (userEmail) {
-      //prevent image upload is email exit
       const filename = req.file.filename;
       const filePath = `uploads/${filename}`;
       fs.unlink(filePath, (err) => {
         if (err) {
           console.log(err);
           res.status(500).json({ message: "Error deleting file" });
-        } else {
-          res.json({ message: "File deleted" });
         }
       });
-
       return next(new ErrorHandler("User already exists", 400));
     }
 
@@ -80,40 +77,40 @@ const createActivationToken = (user) => {
 };
 
 // activate user
-// router.post(
-//   "/activation",
-//   catchAsyncErrors(async (req, res, next) => {
-//     try {
-//       const { activation_token } = req.body;
+router.post(
+  "/activation",
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { activation_token } = req.body;
 
-//       const newUser = jwt.verify(
-//         activation_token,
-//         process.env.ACTIVATION_SECRET
-//       );
+      const newUser = jwt.verify(
+        activation_token,
+        process.env.ACTIVATION_SECRET
+      );
 
-//       if (!newUser) {
-//         return next(new ErrorHandler("Invalid token", 400));
-//       }
-//       const { name, email, password, avatar } = newUser;
+      if (!newUser) {
+        return next(new ErrorHandler("Invalid token", 400));
+      }
+      const { name, email, password, avatar } = newUser;
 
-//       let user = await User.findOne({ email });
+      let user = await User.findOne({ email });
 
-//       if (user) {
-//         return next(new ErrorHandler("User already exists", 400));
-//       }
-//       user = await User.create({
-//         name,
-//         email,
-//         avatar,
-//         password,
-//       });
+      if (user) {
+        return next(new ErrorHandler("User already exists", 400));
+      }
+      user = await User.create({
+        name,
+        email,
+        avatar,
+        password,
+      });
 
-//       sendToken(user, 201, res);
-//     } catch (error) {
-//       return next(new ErrorHandler(error.message, 500));
-//     }
-//   })
-// );
+      sendToken(user, 201, res);
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
 
 // login user
 router.post(
